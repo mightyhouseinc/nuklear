@@ -38,27 +38,26 @@ def parse_files(arg):
             if d == "": d = "."
             if d == " ": continue
             if not os.path.exists(d):
-                print(d + " does not exist.")
+                print(f"{d} does not exist.")
                 exit()
 
             wildcard = os.path.basename(path)
-            unsorted = []
-            for file in os.listdir(d):
-                if fnmatch.fnmatch(file, wildcard):
-                    unsorted.append(os.path.join(d, file))
+            unsorted = [
+                os.path.join(d, file)
+                for file in os.listdir(d)
+                if fnmatch.fnmatch(file, wildcard)
+            ]
             unsorted.sort()
             files.extend(unsorted)
 
+        elif not os.path.exists(path):
+            print(f"{path} does not exist.")
+            exit()
+        elif os.path.isdir(path):
+            print(f"{path} is a directory. Expected a file name.")
+            exit()
         else:
-            # Regular file
-            if not os.path.exists(path):
-                print(path + " does not exist.")
-                exit()
-            elif os.path.isdir(path):
-                print(path + " is a directory. Expected a file name.")
-                exit()
-            else:
-                files.append(path)
+            files.append(path)
 
     return files;
 
@@ -67,7 +66,7 @@ def omit_includes(str, files):
         fname = os.path.basename(file)
         if ".h" in file:
             str = str.replace("#include \"" + fname + "\"", "");
-            str = str.replace("#include <" + fname + ">", "");
+            str = str.replace(f"#include <{fname}>", "");
     return str
 
 # Main start
@@ -106,7 +105,7 @@ while cur_arg < len(sys.argv):
         cur_arg += 1
         outro_files = parse_files(sys.argv[cur_arg])
     else:
-        print("Unknown argument " + sys.argv[cur_arg])
+        print(f"Unknown argument {sys.argv[cur_arg]}")
 
     cur_arg += 1
 
@@ -132,15 +131,15 @@ for f in pub_files:
     sys.stdout.write(open(f, 'r').read())
 # print("#endif /* " + macro + "_SINGLE_HEADER */");
 
-print(os.linesep + "#ifdef " + macro + "_IMPLEMENTATION");
+print(f"{os.linesep}#ifdef {macro}_IMPLEMENTATION");
 print("");
 for f in priv_files:
     print(omit_includes(open(f, 'r').read(),
                         pub_files + priv_files))
-print("#endif /* " + macro + "_IMPLEMENTATION */");
+print(f"#endif /* {macro}_IMPLEMENTATION */");
 
-print(os.linesep + "/*")
+print(f"{os.linesep}/*")
 for f in outro_files:
     sys.stdout.write(open(f, 'r').read())
-print("*/" + os.linesep)
+print(f"*/{os.linesep}")
 
